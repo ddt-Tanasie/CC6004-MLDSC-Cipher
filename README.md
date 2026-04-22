@@ -1,3 +1,7 @@
+
+ https://ddt-tanasie.github.io/CC6004-MLDSC-Cipher/demo/mldsc_demo.html     
+            
+            
 # CC6004 — Multi-Layer Dynamic Shift Cipher (MLDSC)
 
 ## Overview
