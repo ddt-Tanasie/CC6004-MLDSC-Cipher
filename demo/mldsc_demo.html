@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLDSC Cipher – CC6004 Group Project</title>
+<style>
+  :root {
+    --navy: #1a2744;
+    --blue: #2e5bbd;
+    --lightblue: #4a90d9;
+    --accent: #e8a020;
+    --green: #27ae60;
+    --red: #e74c3c;
+    --bg: #f0f4fb;
+    --card: #ffffff;
+    --text: #1e2a3a;
+    --muted: #6b7a90;
+    --border: #d0daea;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 100%);
+    color: white; padding: 28px 40px 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  }
+  header h1 { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.5px; }
+  header p  { font-size: 0.88rem; opacity: 0.78; margin-top: 5px; }
+  .badge { display:inline-block; background:var(--accent); color:#fff; font-size:.7rem;
+           padding:2px 9px; border-radius:20px; font-weight:700; letter-spacing:.5px;
+           margin-left:10px; vertical-align:middle; }
+
+  /* ── TABS ── */
+  .tabs { display:flex; background:var(--navy); padding: 0 40px; gap: 4px; }
+  .tab { padding: 11px 22px; cursor:pointer; color:rgba(255,255,255,0.6);
+         font-size:.88rem; font-weight:600; border-bottom:3px solid transparent;
+         transition:all .2s; user-select:none; }
+  .tab:hover { color:white; }
+  .tab.active { color:white; border-bottom-color:var(--accent); }
+
+  /* ── MAIN ── */
+  .container { max-width: 1100px; margin: 0 auto; padding: 30px 20px; }
+  .panel { display:none; }
+  .panel.active { display:block; }
+
+  /* ── CARDS ── */
+  .card { background:var(--card); border-radius:12px; padding:26px 28px;
+          box-shadow:0 2px 12px rgba(0,0,0,.07); border:1px solid var(--border); }
+  .card + .card { margin-top: 20px; }
+  .card h3 { font-size:1rem; font-weight:700; color:var(--navy); margin-bottom:14px;
+             display:flex; align-items:center; gap:8px; }
+  .card h3 .icon { font-size:1.2rem; }
+
+  /* ── FORM ── */
+  label { display:block; font-size:.8rem; font-weight:600; color:var(--muted);
+          text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; }
+  input[type=text], textarea, select {
+    width:100%; padding:10px 13px; border:1.5px solid var(--border);
+    border-radius:8px; font-size:.92rem; font-family:inherit;
+    transition:border-color .2s, box-shadow .2s; background:var(--bg); color:var(--text);
+  }
+  input[type=text]:focus, textarea:focus {
+    outline:none; border-color:var(--blue);
+    box-shadow:0 0 0 3px rgba(46,91,189,.12);
+  }
+  textarea { resize:vertical; min-height:80px; font-family:'Courier New',monospace; }
+
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:600px){ .row{ grid-template-columns:1fr; } }
+
+  /* ── BUTTONS ── */
+  .btn { display:inline-flex; align-items:center; gap:7px; padding:10px 22px;
+         border:none; border-radius:8px; font-size:.9rem; font-weight:700;
+         cursor:pointer; transition:all .18s; }
+  .btn-primary { background:var(--blue); color:white; }
+  .btn-primary:hover { background:#2450a8; transform:translateY(-1px); box-shadow:0 4px 14px rgba(46,91,189,.35); }
+  .btn-secondary { background:var(--bg); color:var(--text); border:1.5px solid var(--border); }
+  .btn-secondary:hover { border-color:var(--blue); color:var(--blue); }
+  .btn-danger { background:var(--red); color:white; }
+  .btn-danger:hover { background:#c0392b; }
+  .btn-group { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+
+  /* ── OUTPUT / TABLE ── */
+  .output-box {
+    background:#0d1117; color:#c9d1d9; font-family:'Courier New',monospace;
+    font-size:.82rem; padding:16px 18px; border-radius:8px; overflow-x:auto;
+    white-space:pre; min-height:50px; line-height:1.5;
+  }
+  .output-box .kw  { color:#79c0ff; }
+  .output-box .val { color:#a5d6ff; }
+  .output-box .num { color:#ffa657; }
+  .output-box .ok  { color:#56d364; font-weight:bold; }
+  .output-box .err { color:#f85149; font-weight:bold; }
+  .output-box .sep { color:#4d5566; }
+  .output-box .hex { color:#d2a8ff; }
+
+  .step-table { width:100%; border-collapse:collapse; font-size:.78rem; font-family:'Courier New',monospace; }
+  .step-table th { background:var(--navy); color:white; padding:6px 10px; text-align:right; font-weight:600; white-space:nowrap; }
+  .step-table th:first-child { text-align:center; }
+  .step-table td { padding:5px 10px; text-align:right; border-bottom:1px solid var(--border); }
+  .step-table td:first-child { text-align:center; font-weight:600; color:var(--blue); }
+  .step-table td:nth-child(2) { text-align:center; font-family:inherit; font-size:.9rem; }
+  .step-table tr:hover td { background:#f0f4fb; }
+
+  /* ── STATUS BADGE ── */
+  .status { display:inline-flex; align-items:center; gap:5px; padding:5px 12px;
+            border-radius:20px; font-size:.8rem; font-weight:700; }
+  .status.ok  { background:#d4edda; color:#155724; }
+  .status.err { background:#f8d7da; color:#721c24; }
+  .status.info{ background:#cce5ff; color:#004085; }
+
+  /* ── THEORY SECTION ── */
+  .theory-block { background: var(--bg); border-left:4px solid var(--blue);
+                  padding:14px 18px; border-radius:0 8px 8px 0; margin-bottom:16px; }
+  .theory-block h4 { font-size:.92rem; color:var(--navy); margin-bottom:8px; }
+  .theory-block p  { font-size:.85rem; line-height:1.6; color:#3a4a60; }
+  .theory-block .formula { font-family:'Courier New',monospace; background:white;
+    padding:2px 8px; border-radius:4px; font-size:.82rem; color:var(--blue); }
+
+  /* ── COMPARISON TABLE ── */
+  .compare-table { width:100%; border-collapse:collapse; font-size:.84rem; }
+  .compare-table th { background:var(--navy); color:white; padding:10px 14px; }
+  .compare-table td { padding:9px 14px; border-bottom:1px solid var(--border); }
+  .compare-table tr:nth-child(even) td { background:#f7faff; }
+  .compare-table .highlight td { background:#fffde7 !important; font-weight:600; }
+
+  /* ── DIAGRAM ── */
+  .diagram { display:flex; align-items:center; gap:0; flex-wrap:wrap; margin:14px 0; }
+  .d-box { background:var(--blue); color:white; padding:8px 14px; border-radius:6px;
+           font-size:.8rem; font-weight:600; text-align:center; min-width:90px; }
+  .d-box.plain { background:var(--green); }
+  .d-box.cipher{ background:var(--navy); }
+  .d-box.key   { background:var(--accent); color:#fff; }
+  .d-arrow { color:var(--muted); font-size:1.3rem; padding:0 6px; }
+
+  /* ── TEAM TABLE ── */
+  .team-table { width:100%; border-collapse:collapse; font-size:.84rem; }
+  .team-table th { background:var(--blue); color:white; padding:10px 14px; text-align:left; }
+  .team-table td { padding:9px 14px; border-bottom:1px solid var(--border); vertical-align:top; }
+  .team-table tr:nth-child(even) td { background:#f7faff; }
+  .team-table .lead td:first-child { border-left:3px solid var(--accent); font-weight:700; }
+
+  .chip { display:inline-block; background:var(--blue); color:white; font-size:.7rem;
+          padding:2px 8px; border-radius:20px; margin:1px; white-space:nowrap; }
+  .chip.green { background:var(--green); }
+  .chip.orange{ background:var(--accent); }
+  .chip.red   { background:var(--red); }
+
+  input[type=range] { width:100%; accent-color:var(--blue); }
+
+  .info-bar { background:#e8f0fe; border:1px solid #c5d8f8; border-radius:8px;
+              padding:10px 14px; font-size:.83rem; color:#1a3a6b; margin-bottom:16px; }
+
+  /* ── FLOW DIAGRAM (SVG) ── */
+  svg text { font-family:'Segoe UI',sans-serif; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔐 MLDSC <span class="badge">CC6004</span></h1>
+  <p>Multi-Layer Dynamic Shift Cipher &nbsp;·&nbsp; London Metropolitan University &nbsp;·&nbsp; Network and Cloud Security</p>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('encrypt')">⚡ Encrypt</div>
+  <div class="tab" onclick="showTab('decrypt')">🔓 Decrypt</div>
+  <div class="tab" onclick="showTab('walkthrough')">📊 Step-by-Step</div>
+  <div class="tab" onclick="showTab('theory')">📚 Theory</div>
+  <div class="tab" onclick="showTab('team')">👥 Team</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  TAB 1 – ENCRYPT                                          -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div id="tab-encrypt" class="panel active container">
+
+  <div class="card">
+    <h3><span class="icon">✏️</span> Input</h3>
+    <div class="row">
+      <div>
+        <label>Plaintext Message</label>
+        <textarea id="enc-plain" rows="3" placeholder="Enter your message here…">Hello World</textarea>
+      </div>
+      <div>
+        <label>Secret Key</label>
+        <input type="text" id="enc-key" value="SecretKey123" placeholder="Enter your key…">
+        <p style="font-size:.75rem;color:var(--muted);margin-top:5px;">Key is hashed via SHA-256 before use — any string is valid.</p>
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="doEncrypt()">🔒 Encrypt</button>
+      <button class="btn btn-secondary" onclick="clearEnc()">✕ Clear</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">🔐</span> Output</h3>
+    <div id="enc-result" class="output-box">Press <b>Encrypt</b> to see the result…</div>
+    <div class="btn-group" id="enc-copy-btn" style="display:none">
+      <button class="btn btn-secondary" onclick="copyHex()">📋 Copy Hex</button>
+      <button class="btn btn-secondary" onclick="sendToDecrypt()">→ Send to Decrypt</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  TAB 2 – DECRYPT                                          -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div id="tab-decrypt" class="panel container">
+
+  <div class="card">
+    <h3><span class="icon">📥</span> Input</h3>
+    <div class="row">
+      <div>
+        <label>Ciphertext (hex string)</label>
+        <input type="text" id="dec-cipher" placeholder="e.g. f6ac3a1d750159a870dbd2">
+      </div>
+      <div>
+        <label>Secret Key</label>
+        <input type="text" id="dec-key" value="SecretKey123" placeholder="Same key used for encryption">
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="doDecrypt()">🔓 Decrypt</button>
+      <button class="btn btn-secondary" onclick="clearDec()">✕ Clear</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📤</span> Output</h3>
+    <div id="dec-result" class="output-box">Press <b>Decrypt</b> to see the result…</div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  TAB 3 – STEP-BY-STEP WALKTHROUGH                        -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div id="tab-walkthrough" class="panel container">
+
+  <div class="card">
+    <h3><span class="icon">⚙️</span> Configure Walkthrough</h3>
+    <div class="row">
+      <div>
+        <label>Message (max 16 chars for readability)</label>
+        <input type="text" id="wt-plain" value="Hello World" maxlength="16">
+      </div>
+      <div>
+        <label>Key</label>
+        <input type="text" id="wt-key" value="SecretKey123">
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="doWalkthrough()">▶ Run Walkthrough</button>
+    </div>
+  </div>
+
+  <div id="wt-enc-card" class="card" style="display:none">
+    <h3><span class="icon">🔒</span> Encryption — Step-by-Step</h3>
+    <div id="wt-enc-table"></div>
+    <div style="margin-top:14px">
+      <label>Ciphertext (hex)</label>
+      <div id="wt-enc-hex" class="output-box" style="min-height:auto;padding:10px 14px;"></div>
+    </div>
+  </div>
+
+  <div id="wt-dec-card" class="card" style="display:none">
+    <h3><span class="icon">🔓</span> Decryption — Step-by-Step</h3>
+    <div id="wt-dec-table"></div>
+    <div style="margin-top:14px">
+      <label>Recovered Plaintext</label>
+      <div id="wt-dec-plain" class="output-box" style="min-height:auto;padding:10px 14px;"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  TAB 4 – THEORY                                          -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div id="tab-theory" class="panel container">
+
+  <div class="card">
+    <h3><span class="icon">📐</span> MLDSC Overview</h3>
+
+    <div class="info-bar">
+      MLDSC is a <strong>symmetric hybrid cipher</strong> designed for educational purposes, combining three encryption layers to achieve both <em>confusion</em> and <em>diffusion</em> beyond classical ciphers.
+    </div>
+
+    <!-- Encryption flow diagram -->
+    <label>Encryption Pipeline</label>
+    <div class="diagram" style="margin-bottom:18px">
+      <div class="d-box plain">Plaintext<br><small>ASCII bytes</small></div>
+      <div class="d-arrow">→</div>
+      <div class="d-box">Layer 1<br><small>Dynamic Shift</small></div>
+      <div class="d-arrow">→</div>
+      <div class="d-box">Layer 2<br><small>Position Transform</small></div>
+      <div class="d-arrow">→</div>
+      <div class="d-box">Layer 3<br><small>XOR</small></div>
+      <div class="d-arrow">→</div>
+      <div class="d-box cipher">Ciphertext<br><small>Hex output</small></div>
+      <div class="d-arrow" style="position:relative;left:-550px;top:30px;display:none"></div>
+    </div>
+    <div class="diagram" style="margin-top:6px">
+      <div class="d-box key">Key Schedule<br><small>SHA-256 chain</small></div>
+      <div style="font-size:.75rem;color:var(--muted);padding:0 10px">feeds all three layers ↑</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📘</span> Layer Descriptions</h3>
+
+    <div class="theory-block">
+      <h4>🔑 Key Schedule (SHA-256 Chain)</h4>
+      <p>The secret key is hashed using <strong>SHA-256</strong> to produce 32 bytes. The digest is then iteratively re-hashed to generate as many key bytes as needed. This ensures the key schedule is cryptographically unpredictable and non-repeating for reasonable message lengths.</p>
+      <p style="margin-top:8px">
+        <span class="formula">K₀ = SHA256(key)</span>&nbsp;&nbsp;
+        <span class="formula">Kₙ = SHA256(Kₙ₋₁)</span>
+      </p>
+    </div>
+
+    <div class="theory-block">
+      <h4>⚡ Layer 1 — Dynamic Shift (Polyalphabetic)</h4>
+      <p>Inspired by the <strong>Vigenère cipher</strong>, each byte is shifted by a value derived from the key schedule. The shift amount varies per character position, defeating frequency analysis.</p>
+      <p style="margin-top:8px">
+        <span class="formula">shiftᵢ = Kᵢ mod 26</span>&nbsp;&nbsp;
+        <span class="formula">b¹ᵢ = (bᵢ + shiftᵢ) mod 256</span>
+      </p>
+    </div>
+
+    <div class="theory-block">
+      <h4>📍 Layer 2 — Position-Based Transformation</h4>
+      <p>Each byte is additionally shifted by a value derived from its <strong>position in the message</strong>. Even-indexed bytes are shifted right; odd-indexed bytes are shifted left. This introduces positional diffusion.</p>
+      <p style="margin-top:8px">
+        <span class="formula">posᵢ = i mod 16</span>&nbsp;&nbsp;
+        <span class="formula">b²ᵢ = (b¹ᵢ + posᵢ) mod 256 &nbsp; [if even]</span>&nbsp;&nbsp;
+        <span class="formula">b²ᵢ = (b¹ᵢ − posᵢ) mod 256 &nbsp; [if odd]</span>
+      </p>
+    </div>
+
+    <div class="theory-block">
+      <h4>⊕ Layer 3 — XOR with Key Byte</h4>
+      <p>The output of Layer 2 is XOR'd with the full key byte. XOR is self-inverse, making decryption straightforward. This layer provides strong <strong>confusion</strong> — masking the relationship between key and ciphertext.</p>
+      <p style="margin-top:8px">
+        <span class="formula">b³ᵢ = b²ᵢ ⊕ Kᵢ</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">⚖️</span> Comparison with Existing Ciphers</h3>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Cipher</th><th>Type</th><th>Key Length</th><th>Frequency Safe?</th><th>Position-aware?</th><th>Complexity</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Caesar</td><td>Classical mono</td><td>1 char</td><td>✗ No</td><td>✗ No</td><td>Very Low</td></tr>
+        <tr><td>Vigenère</td><td>Classical poly</td><td>Any</td><td>Partial</td><td>✗ No</td><td>Low</td></tr>
+        <tr><td>AES-128</td><td>Modern block</td><td>128 bit</td><td>✓ Yes</td><td>✓ Yes</td><td>Very High</td></tr>
+        <tr><td>RSA</td><td>Asymmetric</td><td>2048+ bit</td><td>✓ Yes</td><td>✓ Yes</td><td>Very High</td></tr>
+        <tr class="highlight"><td><strong>MLDSC</strong></td><td><strong>Hybrid sym.</strong></td><td><strong>Any (SHA-256)</strong></td><td><strong>✓ Yes</strong></td><td><strong>✓ Yes</strong></td><td><strong>Medium</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">✅</span> Strengths &amp; <span style="color:var(--red)">⚠️ Weaknesses</span></h3>
+    <div class="row">
+      <div>
+        <p style="font-weight:700;color:var(--green);margin-bottom:8px">✅ Strengths</p>
+        <ul style="padding-left:18px;font-size:.87rem;line-height:1.8">
+          <li>Three-layer architecture adds redundant confusion</li>
+          <li>SHA-256 key schedule is cryptographically secure</li>
+          <li>Position-aware — same character encrypts differently per position</li>
+          <li>No fixed-length block constraint</li>
+          <li>Simple to implement; educational clarity</li>
+          <li>Resistant to basic frequency analysis</li>
+        </ul>
+      </div>
+      <div>
+        <p style="font-weight:700;color:var(--red);margin-bottom:8px">⚠️ Weaknesses</p>
+        <ul style="padding-left:18px;font-size:.87rem;line-height:1.8">
+          <li>No avalanche effect — changing 1 bit affects only 1 byte</li>
+          <li>No authenticated encryption (no HMAC / MAC)</li>
+          <li>Operates byte-by-byte, not in blocks — no MixColumns equivalent</li>
+          <li>Not suitable for production — not peer-reviewed</li>
+          <li>Key management relies on user's password strength</li>
+          <li>Vulnerable to known-plaintext attack if key reused</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  TAB 5 – TEAM                                            -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div id="tab-team" class="panel container">
+
+  <div class="card">
+    <h3><span class="icon">👥</span> Team — Task Allocation</h3>
+    <table class="team-table">
+      <thead>
+        <tr>
+          <th>Member</th><th>Role</th><th>Responsibilities</th><th>Tools Used</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="lead">
+          <td>Dumitru Tanasie</td>
+          <td>Lead Developer &amp; Cipher Architect</td>
+          <td>Designed MLDSC cipher; implemented all Python code; integrated key schedule; testing</td>
+          <td><span class="chip">Python 3</span> <span class="chip">GitHub</span> <span class="chip green">SHA-256</span></td>
+        </tr>
+        <tr>
+          <td>Muzhgan</td>
+          <td>Research Lead</td>
+          <td>Literature review; analysis of Caesar, Vigenère, AES, RSA; inspired cipher layers</td>
+          <td><span class="chip">Google Scholar</span> <span class="chip">IEEE Xplore</span></td>
+        </tr>
+        <tr>
+          <td>Ryan</td>
+          <td>Security Analyst</td>
+          <td>Strength/weakness evaluation; attack analysis; CIA triad application</td>
+          <td><span class="chip">Journals</span> <span class="chip">NIST docs</span></td>
+        </tr>
+        <tr>
+          <td>Demi</td>
+          <td>Documentation Lead</td>
+          <td>Report structure, academic writing, Harvard referencing, formatting</td>
+          <td><span class="chip">MS Word</span> <span class="chip">Grammarly</span></td>
+        </tr>
+        <tr>
+          <td>Gemechu</td>
+          <td>Implementation Support</td>
+          <td>Assisted coding; debugging; testing edge cases; Python environment setup</td>
+          <td><span class="chip">Python 3</span> <span class="chip">VS Code</span></td>
+        </tr>
+        <tr>
+          <td>Halima</td>
+          <td>Diagram &amp; Design Lead</td>
+          <td>Flowcharts; encryption/decryption diagrams; visual aids; presentation slides</td>
+          <td><span class="chip orange">Draw.io</span> <span class="chip orange">PowerPoint</span></td>
+        </tr>
+        <tr>
+          <td>Shivas Abdulah</td>
+          <td>Testing Lead</td>
+          <td>Black-box test cases; validation; test table documentation; edge-case testing</td>
+          <td><span class="chip">Python unittest</span></td>
+        </tr>
+        <tr>
+          <td>Sabeeh</td>
+          <td>Evaluation Specialist</td>
+          <td>Performance testing; real-world application suitability; comparison analysis</td>
+          <td><span class="chip">Excel</span> <span class="chip">Python</span></td>
+        </tr>
+        <tr>
+          <td>Mariam</td>
+          <td>Academic Skills &amp; Reflection</td>
+          <td>Reflection section; research methodology; library resources; attendance tracking</td>
+          <td><span class="chip green">LMU Library</span> <span class="chip green">RefWorks</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3><span class="icon">📋</span> Module Information</h3>
+    <div class="row">
+      <div style="font-size:.87rem;line-height:1.9">
+        <strong>Module:</strong> CC6004 Network and Cloud Security<br>
+        <strong>University:</strong> London Metropolitan University<br>
+        <strong>School:</strong> School of Computing &amp; Digital Media<br>
+        <strong>Assessment:</strong> Group Coursework (50%)<br>
+        <strong>Submission:</strong> Tuesday 28 April 2026 — 3:00 PM<br>
+        <strong>Referencing:</strong> Harvard Style
+      </div>
+      <div style="font-size:.87rem;line-height:1.9">
+        <strong>Cipher Name:</strong> MLDSC (Multi-Layer Dynamic Shift Cipher)<br>
+        <strong>Language:</strong> Python 3<br>
+        <strong>Key Length:</strong> Any (expanded via SHA-256)<br>
+        <strong>Block Size:</strong> Stream (byte-by-byte)<br>
+        <strong>AI Use:</strong> Structure &amp; debugging support only<br>
+        <strong>Mark Distribution:</strong> Proportional to contribution
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  JAVASCRIPT CIPHER ENGINE                                 -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<script>
+// ─── SHA-256 (pure JS) ───
+async function sha256(data) {
+  const buf = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return new Uint8Array(hash);
+}
+
+async function deriveKeySchedule(key, length) {
+  let digest = await sha256(key);
+  const schedule = [...digest];
+  while (schedule.length < length) {
+    digest = await sha256(digest);
+    schedule.push(...digest);
+  }
+  return schedule.slice(0, length);
+}
+
+async function encrypt(plaintext, key) {
+  const bytes = [...new TextEncoder().encode(plaintext)];
+  const ks = await deriveKeySchedule(key, bytes.length);
+  const steps = [];
+  const out = [];
+
+  for (let i = 0; i < bytes.length; i++) {
+    const b0 = bytes[i];
+    const k  = ks[i];
+    const shift = k % 26;
+    const l1 = (b0 + shift) & 0xFF;
+    const pos = i % 16;
+    const l2 = i % 2 === 0 ? (l1 + pos) & 0xFF : (l1 - pos + 256) & 0xFF;
+    const l3 = l2 ^ k;
+    steps.push({ i, char: String.fromCodePoint(b0), ascii: b0, shift, l1, pos, l2, xor: k, l3 });
+    out.push(l3);
+  }
+  return { hex: out.map(b => b.toString(16).padStart(2,'0')).join(''), steps };
+}
+
+async function decrypt(hexStr, key) {
+  const raw = [];
+  for (let i = 0; i < hexStr.length; i += 2)
+    raw.push(parseInt(hexStr.substr(i, 2), 16));
+  const ks = await deriveKeySchedule(key, raw.length);
+  const steps = [];
+  const chars = [];
+
+  for (let i = 0; i < raw.length; i++) {
+    const b  = raw[i];
+    const k  = ks[i];
+    const shift = k % 26;
+    const pos = i % 16;
+    const r3 = b ^ k;
+    const r2 = i % 2 === 0 ? (r3 - pos + 256) & 0xFF : (r3 + pos) & 0xFF;
+    const r1 = (r2 - shift + 256) & 0xFF;
+    steps.push({ i, cipher: b, r3, r2, r1, char: String.fromCodePoint(r1) });
+    chars.push(String.fromCodePoint(r1));
+  }
+  return { text: chars.join(''), steps };
+}
+
+// ─── Tab switching ───
+function showTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    if (t.textContent.toLowerCase().includes(name.slice(0,3))) t.classList.add('active');
+  });
+  // fix active tab by order
+  const names = ['encrypt','decrypt','walkthrough','theory','team'];
+  const idx = names.indexOf(name);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+}
+
+// ─── Encrypt tab ───
+async function doEncrypt() {
+  const pt  = document.getElementById('enc-plain').value;
+  const key = document.getElementById('enc-key').value;
+  if (!pt || !key) { alert('Please enter both plaintext and key.'); return; }
+
+  const box = document.getElementById('enc-result');
+  box.textContent = 'Encrypting…';
+
+  const { hex } = await encrypt(pt, key);
+  window._lastHex = hex;
+  window._lastKey = key;
+
+  box.innerHTML =
+    `<span class="kw">Plaintext  :</span>  <span class="val">${escHtml(pt)}</span>\n` +
+    `<span class="kw">Key        :</span>  <span class="val">${escHtml(key)}</span>\n` +
+    `<span class="kw">Bytes      :</span>  <span class="num">${pt.length}</span>\n` +
+    `<span class="sep">─────────────────────────────────────────</span>\n` +
+    `<span class="kw">Ciphertext :</span>  <span class="hex">${hex}</span>\n` +
+    `<span class="kw">Hex length :</span>  <span class="num">${hex.length} chars (${hex.length/2} bytes)</span>\n` +
+    `<span class="sep">─────────────────────────────────────────</span>\n` +
+    `<span class="ok">✓ Encryption complete</span>`;
+
+  document.getElementById('enc-copy-btn').style.display = 'flex';
+}
+
+function copyHex() {
+  navigator.clipboard.writeText(window._lastHex || '').then(() => alert('Hex copied!'));
+}
+function sendToDecrypt() {
+  document.getElementById('dec-cipher').value = window._lastHex || '';
+  document.getElementById('dec-key').value = window._lastKey || '';
+  showTab('decrypt');
+}
+function clearEnc() {
+  document.getElementById('enc-plain').value = '';
+  document.getElementById('enc-result').textContent = 'Press Encrypt to see the result…';
+  document.getElementById('enc-copy-btn').style.display = 'none';
+}
+
+// ─── Decrypt tab ───
+async function doDecrypt() {
+  const hex = document.getElementById('dec-cipher').value.trim().toLowerCase();
+  const key = document.getElementById('dec-key').value;
+  if (!hex || !key) { alert('Please enter ciphertext hex and key.'); return; }
+  if (!/^[0-9a-f]*$/.test(hex) || hex.length % 2 !== 0) {
+    document.getElementById('dec-result').innerHTML = '<span class="err">✗ Invalid hex string — must be even-length hex characters only.</span>';
+    return;
+  }
+
+  const box = document.getElementById('dec-result');
+  box.textContent = 'Decrypting…';
+
+  const { text } = await decrypt(hex, key);
+
+  box.innerHTML =
+    `<span class="kw">Ciphertext :</span>  <span class="hex">${escHtml(hex)}</span>\n` +
+    `<span class="kw">Key        :</span>  <span class="val">${escHtml(key)}</span>\n` +
+    `<span class="sep">─────────────────────────────────────────</span>\n` +
+    `<span class="kw">Plaintext  :</span>  <span class="val">${escHtml(text)}</span>\n` +
+    `<span class="sep">─────────────────────────────────────────</span>\n` +
+    `<span class="ok">✓ Decryption complete</span>`;
+}
+
+function clearDec() {
+  document.getElementById('dec-cipher').value = '';
+  document.getElementById('dec-result').textContent = 'Press Decrypt to see the result…';
+}
+
+// ─── Walkthrough tab ───
+async function doWalkthrough() {
+  const pt  = document.getElementById('wt-plain').value.slice(0, 16);
+  const key = document.getElementById('wt-key').value;
+  if (!pt || !key) { alert('Enter message and key.'); return; }
+
+  const { hex, steps: encSteps } = await encrypt(pt, key);
+  const { steps: decSteps }      = await decrypt(hex, key);
+
+  // Encryption table
+  const encTbody = encSteps.map(s =>
+    `<tr>
+      <td>${s.i}</td>
+      <td>${escHtml(s.char)} (${s.ascii})</td>
+      <td>${s.shift}</td>
+      <td>${s.l1}</td>
+      <td>${s.pos}</td>
+      <td>${s.l2}</td>
+      <td>${s.xor}</td>
+      <td>${s.l3}</td>
+      <td>${s.l3.toString(16).padStart(2,'0')}</td>
+    </tr>`
+  ).join('');
+
+  document.getElementById('wt-enc-table').innerHTML = `
+    <div style="overflow-x:auto">
+    <table class="step-table">
+      <thead><tr>
+        <th>i</th><th>Char (ASCII)</th><th>L1 Shift</th><th>After L1</th>
+        <th>L2 Pos</th><th>After L2</th><th>XOR Key</th><th>After L3</th><th>Hex</th>
+      </tr></thead>
+      <tbody>${encTbody}</tbody>
+    </table></div>`;
+
+  document.getElementById('wt-enc-hex').innerHTML = `<span style="color:#d2a8ff">${hex}</span>`;
+  document.getElementById('wt-enc-card').style.display = '';
+
+  // Decryption table
+  const decTbody = decSteps.map(s =>
+    `<tr>
+      <td>${s.i}</td>
+      <td>${s.cipher}</td>
+      <td>${s.r3}</td>
+      <td>${s.r2}</td>
+      <td>${s.r1}</td>
+      <td>${escHtml(s.char)}</td>
+    </tr>`
+  ).join('');
+
+  document.getElementById('wt-dec-table').innerHTML = `
+    <div style="overflow-x:auto">
+    <table class="step-table">
+      <thead><tr>
+        <th>i</th><th>Cipher byte</th><th>Rev L3 (XOR)</th><th>Rev L2 (pos)</th><th>Rev L1 (shift)</th><th>Char</th>
+      </tr></thead>
+      <tbody>${decTbody}</tbody>
+    </table></div>`;
+
+  document.getElementById('wt-dec-plain').innerHTML = `<span style="color:#56d364">${escHtml(decSteps.map(s=>s.char).join(''))}</span>`;
+  document.getElementById('wt-dec-card').style.display = '';
+}
+
+// ─── Utility ───
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+
+</body>
+</html>
